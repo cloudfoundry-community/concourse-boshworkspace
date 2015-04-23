@@ -1,0 +1,19 @@
+---
+name: concourse-warden
+director_uuid: current
+releases:
+- name: concourse
+  version: latest
+  git: https://github.com/concourse/concourse.git
+- name: garden-linux
+  version: latest
+  git: https://github.com/cloudfoundry-incubator/garden-linux-release.git
+
+stemcells:
+- name: bosh-warden-boshlite-ubuntu-trusty-go_agent
+  version: 389
+
+templates:
+- concourse/bosh-lite.yml
+
+meta: {}
