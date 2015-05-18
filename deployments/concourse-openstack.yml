@@ -1,0 +1,35 @@
+---
+name: concourse-openstack
+director_uuid: d2e718a0-aae9-4c40-b8ce-150bf66b1df3
+releases:
+- name: concourse
+  version: 0.50.0
+  git: https://github.com/concourse/concourse.git
+- name: garden-linux
+  version: 0.205.0
+  git: https://github.com/cloudfoundry-incubator/garden-linux-release.git
+
+stemcells:
+- name: bosh-openstack-kvm-ubuntu-trusty-go_agent
+  version: 2972
+
+templates:
+- deployment.yml
+- jobs.yml
+- properties.yml
+- openstack.yml
+
+meta:
+  worker_size: 1
+  subnet_ids:
+    concourse: SUBNET_ID
+  security_groups:
+    - SG_ID
+  instance_type: m1.large
+  floating_static_ips:
+  - FLOATING_IP
+  ipmask: "IP_MASK"
+  dk1_quad: ".5"
+  dns_servers:
+    - 8.8.8.8
+    - 8.8.4.4

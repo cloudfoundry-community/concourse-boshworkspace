@@ -1,0 +1,70 @@
+networks: (( merge ))
+
+meta:
+  floating_static_ips: (( merge ))
+  worker_size: (( merge || 1 ))
+
+jobs:
+  - name: web
+    instances: 1
+    resource_pool: default
+    networks:
+      - name: floating
+        static_ips: (( meta.floating_static_ips ))
+      - name: default
+        default: [dns, gateway]
+        static_ips: (( static_ips(0) ))
+    persistent_disk: 1024 # for consul
+    templates:
+      - {release: concourse, name: consul-agent}
+      - {release: concourse, name: atc}
+      - {release: concourse, name: tsa}
+    properties:
+      atc:
+        development_mode: true
+        postgresql:
+          database: &atc-db atc
+          role: &atc-role
+            name: atc
+            password: dummy-postgres-password
+
+      consul:
+        agent:
+          mode: server
+
+  - name: db
+    instances: 1
+    resource_pool: default
+    networks: [{name: default}]
+    persistent_disk: 10240
+    templates:
+      - {release: concourse, name: consul-agent}
+      - {release: concourse, name: postgresql}
+    properties:
+      postgresql:
+        databases: [{name: *atc-db}]
+        roles: [*atc-role]
+
+      consul:
+        agent:
+          servers: {lan: (( jobs.web.networks.default.static_ips )) }
+
+  - name: worker
+    instances: (( meta.worker_size ))
+    resource_pool: default
+    networks: [{name: default}]
+    templates:
+      - {release: concourse, name: consul-agent}
+      - {release: garden-linux, name: garden}
+      - {release: concourse, name: groundcrew}
+    properties:
+      garden:
+
+        listen_network: tcp
+        listen_address: 0.0.0.0:7777
+
+        allow_host_access: true
+
+      consul:
+        agent:
+          servers: {lan: (( jobs.web.networks.default.static_ips ))  }
